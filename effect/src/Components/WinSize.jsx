@@ -10,9 +10,14 @@ function WinSize() {
 
         return () => {
             window.removeEventListener("resize", handleResize);
+            console.log("EVENT LISTENER REMOVED");
         }
 
     }, []);
+
+    useEffect(() => {
+        document.title = `Size: ${width} x ${height}`;
+    }, [width, height]); 
   
 
     function handleResize() {
