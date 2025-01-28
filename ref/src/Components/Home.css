@@ -1,0 +1,36 @@
+.container{
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    top: 20px;
+}
+
+.clickBtn{
+    background-color: rgb(234, 37, 37);
+    border: none;
+    outline: none;
+    padding: 1rem;
+    border-radius: 8px;
+    transform: translate(-50% -50%);
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: 2px 2px 3px hsla(0, 0%, 0%, 0.5);
+    cursor: pointer;
+    color: white;
+    margin-bottom: 2rem;
+}
+
+.clickBtn:active{
+    transform: translateY(4px);
+}
+
+.inputField{
+    padding: 10px;
+    width: 250px;
+    outline: none;
+    border-radius: 8px;
+    border: 1px solid #333;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    color: white;
+}
