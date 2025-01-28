@@ -1,0 +1,60 @@
+body{
+    background-color: whitesmoke;
+}
+
+h1{
+    font-family: monospace;
+    color: white;
+}
+
+
+.stopwatch{
+    background-color: #333;
+    border: 10px solid burlywood;
+    width: 20%;
+    height: 38%;
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translate(-50%);
+    padding: 1rem;
+    border-radius: 50%;
+    box-shadow: 2px 2px 3px hsla(0, 0%, 0%, 0.3);
+}
+
+.display{
+    color: rgb(32, 255, 32);
+    font-size: 3rem;
+    font-family:'Orbitron', sans-serif;
+    position: absolute;
+    top: 125px;
+    left: 14%;
+    transform: translate(-50% -50%);
+    text-shadow: 2px 2px 2px rgb(32, 255, 32, 0.7);
+    font-weight: bold;
+}
+
+
+.controls{
+    position: absolute;
+    left: 22%;
+    top: 200px;
+}
+
+button{
+    width: 100px;
+    margin-right: 20px;
+    margin-top: 16px;
+    border-radius: 8px;
+    outline: none;
+    border: none;
+    padding: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    box-shadow: 2px 2px 5px hsla(0, 0%, 0%, 0.3);
+    cursor: pointer;
+}
+
+button:active{
+    transform: translateY(4px);
+}
