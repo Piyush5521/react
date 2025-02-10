@@ -30,4 +30,6 @@ To run react with TypeScript follow these Steps:
 
 
 # access public directory images using process.env.PUBLIC_URL + image.png
-backgroundImage: `url(${process.env.PUBLIC_URL}/assets/images/back.png)`,
+backgroundImage: `url(${process.env.PUBLIC_URL}/assets/images/back.png)`
+https://stackoverflow.com/questions/47196800/reactjs-and-images-in-public-folder
+
