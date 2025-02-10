@@ -26,3 +26,8 @@ To run react with TypeScript follow these Steps:
     
      export default reportWebVitals;
 # 6 In tsconfig.json file uncomment "jsx" : and set its value -> "react-jsx"
+
+
+
+# access public directory images using process.env.PUBLIC_URL + image.png
+backgroundImage: `url(${process.env.PUBLIC_URL}/assets/images/back.png)`,
