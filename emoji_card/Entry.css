@@ -1,0 +1,36 @@
+body{
+    background-color: aquamarine;
+}
+.container{
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
+    width: 80%;
+}
+
+.card{
+    background-color: white;
+    width: 300px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    margin-right: 1rem;
+    border-radius: 5px;
+    box-shadow: 5px 5px #a9a7a7;
+}
+
+.emojiIcon{
+    text-align: center;
+    font-size: 40px;
+}
+
+h1{
+    text-align: center;
+}
+
+h2{
+    text-align: center;
+}
+
+.description{
+    text-align: center;
+}

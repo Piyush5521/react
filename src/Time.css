@@ -1,0 +1,22 @@
+.timeBtn{
+    width: fit-content;
+    background-color: rgb(4, 179, 4);
+    border: none;
+    border-radius: 8px;
+    padding: 1rem;
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.2rem;
+    box-shadow: 2px 4px #333;
+    outline: none;
+}
+
+
+.timeBtn:hover {background-color: #3e8e41}
+
+
+.timeBtn:active {
+    background-color: #3e8e41;
+    box-shadow: 0 5px #666;
+    transform: translateY(4px);
+  }
