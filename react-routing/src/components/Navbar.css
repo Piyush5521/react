@@ -1,0 +1,18 @@
+ul{
+    display: flex;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: #fff;
+    width: 100vw;
+}
+
+li{
+    margin: 1.5rem;
+    list-style-type: none;
+}
+
+
+.active-link{
+    border-bottom: 3px solid black;
+}
