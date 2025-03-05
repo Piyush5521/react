@@ -1,0 +1,17 @@
+.user-dashboard{
+    width: 100vw;
+    position: absolute;
+    top:0;
+}
+
+.dashboard-heading{
+    text-align: center;
+    color: white;
+}
+
+.user-dashboard-navbar{
+    display: flex;
+    justify-content: space-between;
+    background-color: black;
+    padding: 10px;
+}

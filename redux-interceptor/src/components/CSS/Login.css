@@ -1,0 +1,9 @@
+.login-page-container{
+    width: 100vw;
+    position: absolute;
+    top: 0px;
+}
+
+.login_page_h1{
+    text-align: center;
+}
