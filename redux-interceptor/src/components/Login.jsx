@@ -1,16 +1,21 @@
 import React, { useState } from "react";
 import "./CSS/Login.css";
-import { Box, Button, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, FormControlLabel, Stack, Switch, TextField, Typography } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";  
 import { login } from '../redux/AuthSlice';
 
 export const Login = () => {
+    const [theme, setTheme] = useState(false);
+
+    const handleChange = (event) => {
+      setTheme(event.target.checked);
+    };
 
     const dispatch = useDispatch();
 
     const navigate = useNavigate();
-    
+
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
@@ -33,7 +38,12 @@ export const Login = () => {
     }
 
   return (
-    <Box className="login-page-container">
+    <Box className="login-page-container" style={{ backgroundColor: theme ? "black" : "whitesmoke",
+        color: theme ? "purple" : "black",}}>
+            <FormControlLabel
+        label="Dark mode"
+        control={<Switch checked={theme} onChange={handleChange} color="secondary" />}
+      ></FormControlLabel>
       <h1 className="login_page_h1">User Login</h1>
       <br />
       <Stack
@@ -48,6 +58,7 @@ export const Login = () => {
           padding: "15px",
           borderRadius: "8px",
           boxShadow: "2px 2px 3px rgb(0, 0, 0, 0.2)",
+          backgroundColor:theme ? 'white' : null,
         }}
       >
       

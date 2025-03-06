@@ -3,6 +3,8 @@ import "./App.css";
 import { Login } from "./components/Login";
 import SignUp from "./components/SignUp";
 import Dashboard from "./components/Dashboard";
+import UserList from "./components/UsersList";
+import Posts from "./components/Posts";
 
 function App() {
   const Layout = () => {
@@ -28,6 +30,14 @@ function App() {
         {
           path: '/dashboard',
           element: <Dashboard/>
+        },
+        {
+          path: '/userlist',
+          element: <UserList/>
+        },
+        {
+          path: '/posts',
+          element: <Posts/>
         }
       ]
     }
