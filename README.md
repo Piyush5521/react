@@ -33,3 +33,5 @@ To run react with TypeScript follow these Steps:
 backgroundImage: `url(${process.env.PUBLIC_URL}/assets/images/back.png)`
 https://stackoverflow.com/questions/47196800/reactjs-and-images-in-public-folder
 
+
+<img src="react-routers.jpg" />
