@@ -1,0 +1,1408 @@
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  TextField,
+  Typography,
+} from "@mui/material";
+import React, { useEffect, useRef, useState } from "react";
+import StaticTrackDropdown from "../../../components/common/dropdowns/StaticTrackDropdown";
+import { StitchingTrack } from "./StitchingTrack";
+import CustomButton from "../../../components/common/buttons/CustomButton";
+import ReadOnlyInput from "../../../components/common/textBoxs/ReadOnlyInput";
+import AgGridTable from "../../../components/specific/cuttingTrack/CuttingTrackTable";
+import AutoComplete from "../../../components/common/dropdowns/AutoComplete";
+
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import {
+  AddInputOrderNumber,
+  AddInputOrderNumberWithKey,
+  StitchingStartDate,
+} from "../../../services/StitchingServices/ApiEndpoints";
+import { StitchingApi } from "../../../services/StitchingServices/ApiService";
+import { DemoContainer, DemoItem } from "@mui/x-date-pickers/internals/demo";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
+import DeleteConfirmationPopUp from "../../../components/specific/Stitching/DeleteConfirmationPopUp";
+import { useNavigate } from "react-router-dom";
+import * as ENUMTEXT from "../../../constants/AlertText";
+import FileUploadField from "../../../components/common/buttons/FileUploadField";
+import CustomAlert from "../../../components/common/CustomAlert";
+
+export default function StitchingLayerAddInput() {
+  const navigation = useNavigate();
+
+  const alertRef = useRef();
+
+  const [orderNumberData, setOrderNumberData] = useState([]);
+  const [addInputCategory, setAddInputCategory] = useState([]);
+  const [selectOrderLine, setSelectOrderLine] = useState([]);
+  const [addInputType, setAddInputType] = useState([]);
+  const [selectedInputCategory, setSelectedInputCategory] = useState("");
+  const [addInputColDefs, setAddInputColDefs] = useState(selectedInputCategory);
+  const [inputValue, setInputValue] = useState("");
+  const [selectedItemValue, setSelectedItemValue] = useState("");
+  const [selectedValue, setSelectedValue] = React.useState("");
+  const [rowData, setRowData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [selectedOrderData, setSelectedOrderData] = useState(null);
+  const [styleDetailsData, setStyleDetailsData] = useState(null);
+  const [selectedStyleKey, setSelectedStyleKey] = useState(null);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
+  const [orderApiData, setOrderApiData] = useState(null);
+  const [orderSizeData, setOrderSizeData] = useState([]);
+  const [deleteConfirmPopUp, setDeleteConfirmPopUp] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [rowToDelete, setRowToDelete] = useState(null);
+  const [files, setFiles] = useState("");
+
+  const [allotedQty, setAllotedQty] = useState(0);
+  const [remainingQuanty, setRemainingQuanty] = useState(0);
+  const [alterQuanty, setAlterQuanty] = useState(null);
+  const [topAlt, setTopAlt] = useState("");
+  const [totalCheck, setTotalCheck] = useState(null);
+  const [checkerNameAndId, setCheckerNameAndId] = useState([]);
+  const [checkerNameArray, setCheckerNameArray] = useState([]);
+  const [selectedCheckerName, setSelectedCheckerName] = useState("");
+  const [alterPer, setAlterPer] = useState(null);
+
+  const [formData, setFormData] = useState({
+    selectedSize: "",
+    quantity: null,
+    remarks: "",
+    startTime: null,
+    endTime: null,
+    startDateTime: null,
+    orderSelectedLine: "",
+    selectedInputType: "",
+    lineId: "",
+  });
+
+  const [orderDates, setOrderDates] = useState({
+    cuttingGoAheadDate: "",
+    scheduledStartDate: "",
+    deliveryDate: "",
+    scheduledCuttingDate: "",
+    stitchingStartDate: "",
+  });
+
+  const [startAndEndDate, setStartAndEndDate] = useState({
+    startDate: "",
+    endDate: "",
+  });
+
+  const [dateFromStartDate, setDateFromStartDate] = useState(null);
+
+  useEffect(() => {
+    if (selectedOrderData?.orderCreationDetailIdAndStyle) {
+      const orderstyle = Object.entries(
+        selectedOrderData?.orderCreationDetailIdAndStyle
+      );
+      // console.log("style:", orderstyle); // Array of [key, value] pairs
+      setStyleDetailsData(orderstyle);
+    }
+  }, [selectedOrderData]);
+
+  useEffect(() => {
+    if (orderApiData) {
+      const selectedOrderObj = orderApiData.find(
+        (item) => item.orderNumber === inputValue
+      );
+      setSelectedOrderData(selectedOrderObj);
+    }
+  }, [orderApiData, inputValue]);
+
+  const defaultColDef = {
+    filter: true,
+    floatingFilter: true,
+    minWidth: 200,
+  };
+
+  const handleEditClick = (rowData) => {
+    if (!rowData) {
+      console.error("Error: rowData is undefined or null");
+      return;
+    }
+
+    console.log("RowId", rowData.rowid);
+
+    setIsEditing(true);
+
+    // Safely populate form data with the row data
+    setFormData({
+      rowid: rowData.rowid,
+      startDateTime: rowData.Date
+        ? dayjs(rowData.Date, "DD/MM/YYYY").toISOString()
+        : "",
+      startTime: rowData["Start Time"] || "",
+      endTime: rowData["End Time"]
+        ? dayjs(rowData["End Time"], "hh:mm A").toISOString()
+        : "",
+      selectedInputType: rowData.Type || "",
+      orderSelectedLine: rowData.Line || "",
+      selectedSize: rowData.Size || "",
+      quantity: rowData.Quantity || 0,
+      remarks: rowData.Remarks || "",
+      lineId: rowData.lineId || "",
+    });
+
+    setRemainingQuanty(rowData?.AllotedQuantity - rowData?.Quantity || 0);
+    setTopAlt(rowData.TopAlter);
+    setAlterQuanty(rowData.AlterQty);
+    setSelectedCheckerName(rowData.CheckerName);
+  };
+
+  const handleDeleteClick = (rowData) => {
+    setDeleteConfirmPopUp(true);
+    setRowToDelete(rowData);
+  };
+
+  // Confirm deletion
+  const handleconfirm = async () => {
+    console.log("Confirming deletion for row with rowid: ", rowToDelete?.rowid); // Log the rowId here
+    setDeleteConfirmPopUp(false);
+    deleteRow(rowToDelete); // Pass rowToDelete to deleteRow
+  };
+
+  const deletePopUpCancel = () => {
+    setDeleteConfirmPopUp(false);
+  };
+
+  const deleteRow = (rowToDelete) => {
+    if (rowToDelete && rowToDelete.rowid) {
+      setRowData((prevData) => {
+        const updatedData = prevData.filter(
+          (row) => row.rowid !== rowToDelete.rowid
+        );
+        return updatedData;
+      });
+    } else {
+      console.error("No valid rowid found for deletion.");
+    }
+  };
+
+  const stitchingTrackAddInputActionBtn = (params) => {
+    return (
+      <>
+        <IconButton>
+          <EditIcon onClick={() => handleEditClick(params.data)} />
+        </IconButton>
+        <IconButton>
+          <DeleteIcon onClick={() => handleDeleteClick(params.data)} />
+        </IconButton>
+      </>
+    );
+  };
+
+  const getColumn = (inputCategory) => {
+    if (inputCategory === "CHECKING") {
+      return [
+        { field: "Date" },
+        { field: "Start Time" },
+        { field: "End Time" },
+        { field: "Type" },
+        { field: "Line" },
+        { field: "Size" },
+        { field: "Quantity" },
+        { field: "Added By" },
+        { field: "CheckerName" },
+        { field: "AlterQty" },
+        { field: "TotalChecked" },
+        {
+          headerName: "Total Checked (For Order)",
+          field: "TotalCheckedForOrder",
+        },
+        { field: "AllotedQuantity" },
+        { field: "RemainingQty" },
+        { field: "Remarks" },
+        { field: "TopAlter" },
+        { field: "AlterPercentage" },
+        { field: "Action", cellRenderer: stitchingTrackAddInputActionBtn },
+      ].map((col) => ({
+        ...col,
+        ...defaultColDef,
+      }));
+    } else {
+      return [
+        { field: "Date" },
+        { field: "Start Time" },
+        { field: "End Time" },
+        { field: "Type" },
+        { field: "Line" },
+        { field: "Size" },
+        { field: "Quantity" },
+        { field: "Added By" },
+        // { field: "Checker Name" },
+        { field: "AllotedQuantity" },
+        { field: "RemainingQty" },
+        { field: "Remarks" },
+        { field: "Action", cellRenderer: stitchingTrackAddInputActionBtn },
+      ].map((col) => ({
+        ...col,
+        ...defaultColDef,
+      }));
+    }
+  };
+
+  useEffect(() => {
+    const newColDefs = getColumn(selectedInputCategory);
+    setAddInputColDefs(newColDefs);
+
+    // console.log("Updated Column Definitions: ", newColDefs);
+
+    // Clear the row data when changing the category
+    if (
+      selectedInputCategory === "PRODUCTION" ||
+      selectedInputCategory === "CHECKING"
+    ) {
+      setRowData([]);
+    }
+
+    setFormData((prevState) => ({
+      ...prevState,
+      selectedInputType: "", // Clear selectedInputType
+      startTime: null,
+      endTime: null,
+    }));
+
+    setFiles("");
+  }, [selectedInputCategory]);
+
+  const handleAlterQuantityChange = (event) => {
+    setAlterQuanty(event.target.value);
+  };
+
+  const handleTopAlterChange = (event) => {
+    setTopAlt(event.target.value);
+  };
+
+  const calculateTotalChecked = () => {
+    const quantity = Number(formData?.quantity);
+    const alterQuantity = Number(alterQuanty);
+
+    if (!isNaN(quantity) && !isNaN(alterQuantity)) {
+      const totalChecked = quantity + alterQuantity;
+      setTotalCheck(totalChecked);
+    }
+
+    const TotalQty = quantity + alterQuantity;
+    const alterPercent = ((alterQuantity / TotalQty) * 100).toFixed(2);
+    setAlterPer(alterPercent);
+  };
+
+  useEffect(() => {
+    calculateTotalChecked();
+  }, [formData?.quantity, alterQuanty]);
+
+  const handleAddInput = () => {
+    if (
+      !formData.startTime ||
+      !formData.quantity ||
+      !formData.selectedSize ||
+      !formData.selectedInputType
+    ) {
+      alertRef.current.showAlert(
+        "Please fill out all required fields correctly",
+        ENUMTEXT.ERROR.ERROR_SERV
+      );
+      return;
+    }
+
+    const rowIdToUse = isEditing ? formData.rowid : `new#${rowData.length}`;
+
+    const orderCreationId = selectedOrderData?.orderCreationId;
+    const orderCreationDetailId = selectedStyleKey;
+    const inputCategory = selectedInputCategory;
+    const orderNumber = inputValue;
+    const startDate = startAndEndDate?.startDate;
+    const endDate = startAndEndDate?.endDate;
+
+    let newRemainingQty;
+    let newTotalCheckedForAll;
+
+    const recalculateRemainingQty = (rows) => {
+      return rows.map((row, index) => {
+        if (index === 0) return row;
+        const previousRow = rows[index - 1];
+        return {
+          ...row,
+          RemainingQty: previousRow.RemainingQty - row.Quantity,
+        };
+      });
+    };
+
+    const recalculateTotalCheckedForAll = (rows) => {
+      return rows.reduce((total, row) => total + row.TotalChecked, 0);
+    };
+
+    const formattedEndTime = formData.endTime
+      ? dayjs(formData.endTime).format("hh:mm A")
+      : "";
+
+    // Recalculate totalChecked based on quantity and alterQuantity
+    const quantity = Number(formData?.quantity);
+    const alterQuantity = Number(alterQuanty);
+
+    if (!isNaN(quantity) && !isNaN(alterQuantity)) {
+      const totalChecked = quantity + alterQuantity;
+      setTotalCheck(totalChecked); // Update totalCheck state
+    }
+
+    if (selectedInputCategory === "PRODUCTION") {
+      if (isEditing) {
+        const editedRow = rowData.find((row) => row.rowid === formData.rowid);
+        newRemainingQty = editedRow.AllotedQuantity - formData.quantity;
+
+        const updatedRowData = rowData.map((row) =>
+          row.rowid === formData.rowid
+            ? {
+                ...row,
+                Quantity: formData.quantity,
+                RemainingQty: newRemainingQty,
+                Remarks: formData.remarks,
+                "Start Time": formData.startTime,
+                "End Time": formattedEndTime,
+                Type: formData.selectedInputType,
+                Line: formData.orderSelectedLine,
+                Size: formData.selectedSize,
+                Action: "",
+              }
+            : row
+        );
+
+        const finalUpdatedRowData = recalculateRemainingQty(updatedRowData);
+        setRowData(finalUpdatedRowData);
+      } else {
+        // Adding a new row
+        if (rowData.length === 0) {
+          newRemainingQty = allotedQty - formData.quantity;
+        } else {
+          const lastRow = rowData[rowData.length - 1];
+          newRemainingQty = lastRow.RemainingQty - formData.quantity;
+        }
+
+        // Recalculate totalChecked when adding a new row
+        const totalChecked = quantity + alterQuantity;
+
+        const newRow = {
+          rowid: rowIdToUse,
+          Date: dayjs(formData.startDateTime).format("DD/MM/YYYY"),
+          "Start Time": formData.startTime,
+          "End Time": formattedEndTime,
+          Type: formData.selectedInputType,
+          Line: formData.orderSelectedLine,
+          Size: formData.selectedSize,
+          Quantity: formData.quantity,
+          "Added By": "John Doe",
+          AllotedQuantity: allotedQty,
+          RemainingQty: newRemainingQty,
+          Remarks: formData.remarks,
+          Action: "",
+          orderCreationId,
+          orderCreationDetailId,
+          inputCategory,
+          orderNumber,
+          startDate,
+          endDate,
+          lineId: formData.lineId,
+          TotalChecked: totalChecked, // Add TotalChecked here
+        };
+
+        const updatedRowData = [...rowData, newRow];
+        const finalUpdatedRowData = recalculateRemainingQty(updatedRowData);
+
+        setRowData(finalUpdatedRowData);
+      }
+    }
+
+    if (selectedInputCategory === "CHECKING") {
+      if (!topAlt || !alterQuanty || !selectedCheckerName) {
+        alertRef.current.showAlert(
+          "Please fill out all required fields correctly",
+          ENUMTEXT.ERROR.ERROR_SERV
+        );
+        return;
+      }
+
+      if (isEditing) {
+        const editedRow = rowData.find((row) => row.rowid === formData.rowid);
+        newRemainingQty = editedRow.AllotedQuantity - formData.quantity;
+
+        const updatedRowData = rowData.map((row) =>
+          row.rowid === formData.rowid
+            ? {
+                ...row,
+                Quantity: formData.quantity,
+                RemainingQty: newRemainingQty,
+                Remarks: formData.remarks,
+                "Start Time": formData.startTime,
+                "End Time": formattedEndTime,
+                Type: formData.selectedInputType,
+                Line: formData.orderSelectedLine,
+                Size: formData.selectedSize,
+                Action: "",
+                CheckerName: selectedCheckerName,
+                AlterQty: alterQuanty,
+                TotalChecked: totalCheck, // Updated TotalChecked
+                TopAlter: topAlt,
+                AlterPercentage: alterPer,
+              }
+            : row
+        );
+
+        const finalUpdatedRowData = recalculateRemainingQty(updatedRowData);
+        newTotalCheckedForAll =
+          recalculateTotalCheckedForAll(finalUpdatedRowData);
+
+        setRowData(finalUpdatedRowData);
+      } else {
+        if (rowData.length === 0) {
+          newRemainingQty = allotedQty - formData.quantity;
+          newTotalCheckedForAll = totalCheck;
+        } else {
+          const lastRow = rowData[rowData.length - 1];
+          newRemainingQty = lastRow.RemainingQty - formData.quantity;
+
+          newTotalCheckedForAll = lastRow.TotalChecked + totalCheck;
+        }
+
+        // Recalculate totalChecked when adding a new row
+        const totalChecked = quantity + alterQuantity;
+
+        const newRow = {
+          rowid: rowIdToUse,
+          Date: dayjs(formData.startDateTime).format("DD/MM/YYYY"),
+          "Start Time": formData.startTime,
+          "End Time": formattedEndTime,
+          Type: formData.selectedInputType,
+          Line: formData.orderSelectedLine,
+          Size: formData.selectedSize,
+          Quantity: formData.quantity,
+          "Added By": "John Doe",
+          CheckerName: selectedCheckerName,
+          AlterQty: alterQuanty,
+          TotalChecked: totalChecked, // Updated TotalChecked
+          TotalCheckedForOrder: newTotalCheckedForAll,
+          AllotedQuantity: allotedQty,
+          RemainingQty: newRemainingQty,
+          Remarks: formData.remarks,
+          TopAlter: topAlt,
+          AlterPercentage: alterPer,
+          Action: "",
+          orderCreationId,
+          orderCreationDetailId,
+          inputCategory,
+          orderNumber,
+          startDate,
+          endDate,
+          lineId: formData.lineId,
+        };
+
+        const updatedRowData = [...rowData, newRow];
+        const finalUpdatedRowData = recalculateRemainingQty(updatedRowData);
+
+        newTotalCheckedForAll =
+          recalculateTotalCheckedForAll(finalUpdatedRowData);
+
+        setRowData(finalUpdatedRowData);
+      }
+    }
+
+    setFormData({
+      ...formData,
+      startTime: "",
+      quantity: "",
+      selectedSize: "",
+      remarks: "",
+    });
+
+    setFiles("");
+    setSelectedCheckerName("");
+    setAlterQuanty(null);
+    setTopAlt("");
+    setIsEditing(false);
+  };
+
+  const handleOrderChange = async () => {
+    setLoading(true);
+    try {
+      const response = await StitchingApi.get(AddInputOrderNumber);
+      setOrderApiData(response.data.response.orders);
+
+      const ordersData = response?.data?.response?.orders;
+
+      const orderNumData = ordersData.map((item) => item.orderNumber);
+      setOrderNumberData(orderNumData);
+    } catch (err) {
+      console.error("GetError", err);
+    } finally {
+      setLoading(false); // Set loading to false after the API call finishes
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      await handleOrderChange();
+    };
+
+    fetchData();
+  }, []);
+
+  // New Api for Start Date
+
+  const handleStitchingStartDate = async (
+    orderCreationId,
+    orderCreationDetailId,
+    inputCategory,
+    inputType,
+    size
+  ) => {
+    try {
+      const endpoint = StitchingStartDate(
+        orderCreationId,
+        orderCreationDetailId,
+        inputCategory,
+        inputType,
+        size
+      );
+      const response = await StitchingApi.get(endpoint);
+
+      setDateFromStartDate(response?.data?.response);
+    } catch (err) {
+      console.error("GetError", err);
+    }
+  };
+
+  const fetchStartDate = async (
+    orderCreationId,
+    orderCreationDetailId,
+    inputCategory,
+    inputType,
+    size
+  ) => {
+    setLoading(true); // Set loading state before API call
+    await handleStitchingStartDate(
+      orderCreationId,
+      orderCreationDetailId,
+      inputCategory,
+      inputType,
+      size
+    );
+  };
+
+  useEffect(() => {
+    if (
+      selectedOrderData?.orderCreationId &&
+      selectedStyleKey &&
+      formData?.selectedInputType &&
+      formData?.selectedSize &&
+      selectedInputCategory
+    ) {
+      fetchStartDate(
+        selectedOrderData?.orderCreationId,
+        selectedStyleKey,
+        selectedInputCategory,
+        formData.selectedInputType,
+        formData.selectedSize
+      );
+    }
+  }, [formData?.selectedSize]);
+
+  useEffect(() => {
+    // Check if category is available in selectedOrderDetails
+    if (selectedOrderDetails?.category) {
+      setAddInputCategory(selectedOrderDetails?.category);
+    }
+
+    setFormData((prevState) => ({
+      ...prevState,
+      startDateTime: dayjs().format("YYYY-MM-DD"),
+    }));
+
+    // Handling selectedInputCategory and updating relevant input types
+    if (selectedInputCategory) {
+      if (
+        selectedInputCategory === "PRODUCTION" &&
+        selectedOrderDetails?.productionInputTypes
+      ) {
+        setAddInputType(selectedOrderDetails?.productionInputTypes);
+      } else if (
+        selectedInputCategory === "CHECKING" &&
+        selectedOrderDetails?.checkingInputTypes
+      ) {
+        setAddInputType(selectedOrderDetails?.checkingInputTypes);
+      } else {
+        setAddInputType([]);
+      }
+
+      // Check if lines are available in selectedOrderDetails
+      if (
+        selectedOrderDetails?.lines &&
+        Array.isArray(selectedOrderDetails.lines)
+      ) {
+        setSelectOrderLine(selectedOrderDetails?.lines);
+      }
+
+      const selectedLine = selectOrderLine.find(
+        (line) => line.lineName === formData.orderSelectedLine
+      );
+
+      const lineId = selectedLine ? selectedLine.lineId : null;
+
+      setFormData((prevState) => ({
+        ...prevState,
+        lineId: lineId,
+      }));
+
+      // Handle startDateTime
+      if (dateFromStartDate) {
+        const startDate = dateFromStartDate.split("T")[0];
+        setFormData((prevState) => ({
+          ...prevState,
+          startDateTime: startDate,
+        }));
+
+        setStartAndEndDate((prevState) => ({
+          ...prevState,
+          startDate: dateFromStartDate,
+        }));
+        // console.log("StartDateTime", startDate);
+      }
+
+      if (dateFromStartDate) {
+        const timePart = dateFromStartDate.split("T")[1];
+
+        setFormData((prevState) => ({
+          ...prevState,
+          startTime: timePart,
+        }));
+        // console.log("starttime", timePart);
+      }
+      const currentTime = dayjs().format("YYYY-MM-DDTHH:mm:ss"); // Store the full date-time
+      // console.log("Setting current time as endTime:", currentTime);
+      setFormData((prevState) => ({
+        ...prevState,
+        endTime: currentTime, // Set current date-time (with date and time)
+      }));
+
+      setStartAndEndDate((prevState) => ({
+        ...prevState,
+        endDate: currentTime,
+      }));
+
+      if (selectedOrderDetails?.sizes) {
+        const sizesData = selectedOrderDetails?.sizes;
+        setOrderSizeData(sizesData);
+      }
+
+      if (selectedOrderDetails) {
+        setOrderDates({
+          cuttingGoAheadDate: selectedOrderDetails.cuttingGoAheadDate,
+          scheduledStartDate: selectedOrderDetails.stitchingStartedOn,
+          deliveryDate: selectedOrderDetails.deliveryDate,
+          scheduledCuttingDate: selectedOrderDetails.cuttingStartDate,
+          stitchingStartDate: selectedOrderDetails.stitchingStartDate,
+        });
+      }
+
+      if (selectedOrderDetails?.allottedQuantity) {
+        setAllotedQty(selectedOrderDetails?.allottedQuantity);
+      }
+
+      if (selectedOrderDetails?.checkerNames) {
+        const checkerData = selectedOrderDetails.checkerNames.map(
+          (checker) => ({
+            id: checker.id,
+            checkerName: checker.checkerName,
+          })
+        );
+        setCheckerNameAndId(checkerData);
+      }
+
+      if (selectedOrderDetails?.checkerNames) {
+        const checkerNamesOnly = checkerNameAndId.map(
+          (item) => item.checkerName
+        );
+        setCheckerNameArray(checkerNamesOnly);
+      }
+    }
+  }, [
+    selectedStyleKey,
+    selectedInputCategory,
+    selectedOrderDetails,
+    dateFromStartDate,
+  ]);
+
+  const handleOrderChng = (e, newValue) => {
+    setInputValue(newValue);
+    console.log("selected: ", newValue);
+    setRowData([]);
+
+    setFormData({
+      selectedSize: "",
+      quantity: null,
+      remarks: "",
+      startTime: null,
+      endTime: null,
+      startDateTime: null,
+      orderSelectedLine: "",
+      selectedInputType: "",
+    });
+
+    setSelectedItemValue("");
+    setSelectedStyleKey(null);
+    setSelectedInputCategory("");
+    setSelectedOrderDetails(null);
+  };
+
+  useEffect(() => {
+    if (styleDetailsData?.length === 1) {
+      const singleStyle = styleDetailsData[0]; // this is an array of [key, value]
+      setSelectedItemValue(singleStyle[1]); // Set the style name as the value
+      setSelectedStyleKey(singleStyle[0]);
+    } else if (styleDetailsData?.length > 1) {
+      if (selectedIndex !== null) {
+        // If there's a selected index, update based on it
+        const selectedStyle = styleDetailsData[selectedIndex];
+        setSelectedItemValue(selectedStyle[1]); // Set value based on selected item
+        setSelectedStyleKey(selectedStyle[0]); // Set key based on selected item
+      }
+    }
+  }, [styleDetailsData, selectedStyleKey]);
+
+  const handleItemChng = (e, ItemValue) => {
+    setSelectedItemValue(ItemValue);
+    const selectedEntry = styleDetailsData.find(
+      ([key, value]) => value === ItemValue
+    );
+    const selectedKey = selectedEntry ? selectedEntry[0] : null; // Get the key (ID)
+
+    setSelectedStyleKey(selectedKey); // Store the selected key (style ID)
+    // console.log("Selected Item:", ItemValue); // Display the selected style name
+    // console.log("Selected Key:", selectedStyleKey);
+  };
+
+  const handleSelectedOrderDetails = async (
+    orderCreationId,
+    orderCreationDetailId
+  ) => {
+    try {
+      const response = await StitchingApi.get(
+        AddInputOrderNumberWithKey(orderCreationId, orderCreationDetailId)
+      );
+      // console.log("Selected Order Data", response.data.response);
+      const selectedOrderResponse = response.data.response;
+      setSelectedOrderDetails(selectedOrderResponse);
+    } catch (err) {
+      console.error("GetError", err);
+    }
+  };
+
+  useEffect(() => {
+    const selectedOrderCreationId = selectedOrderData?.orderCreationId;
+    const selectedOrderCreationDetailId = selectedStyleKey;
+
+    // Only call API if both orderCreationId and orderCreationDetailId are not null
+    if (selectedOrderCreationId && selectedOrderCreationDetailId) {
+      handleSelectedOrderDetails(
+        selectedOrderCreationId,
+        selectedOrderCreationDetailId
+      );
+    } else {
+      console.log(
+        "Missing required values for API call: orderCreationId or orderCreationDetailId"
+      );
+    }
+  }, [selectedOrderData, selectedStyleKey]);
+
+  const handleInputChange = (field, value) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      [field]: value,
+    }));
+  };
+
+  // const handleFileChange = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setFileName(file.name);
+  //   }
+  // };
+  const handleFileChange = (event) => {
+    const selectedFiles = Array.from(event.target.files); // Convert FileList to an array
+    setFiles((prev) => [...prev, ...selectedFiles]); // Add the new files to the existing list
+  };
+
+  const handleDeleteFile = (fileToDelete) => {
+    setFiles((prev) => prev.filter((file) => file !== fileToDelete)); // Remove the file from the array
+  };
+
+  // const convertToMultipart = async (imge) => {
+  //   let res = await fetch(imge)
+  //     .then((res) => res.blob())
+  //     .then((blob) => {
+  //       const file = new File([blob]);
+  //       return file;
+  //     });
+  //   return res;
+  // };
+
+  // const handleSubmit = async () => {
+  //   try {
+  //     const formData = new FormData();
+  //     rowData.forEach((row, index) => {
+  //       const dataObject = {
+  //         [`inputTypes[${index}].orderCreationId`]: row.orderCreationId,
+  //         [`inputTypes[${index}].orderCreationDetailId`]:
+  //           row.orderCreationDetailId,
+  //         [`inputTypes[${index}].orderNumber`]: row.orderNumber,
+  //         [`inputTypes[${index}].productionInputType`]: row.Type,
+  //         [`inputTypes[${index}].inputCategory`]: row.inputCategory,
+  //         [`inputTypes[${index}].startTime`]: row.startDate,
+  //         [`inputTypes[${index}].endTime`]: row.endDate,
+  //         [`inputTypes[${index}].size`]: row.Size,
+  //         [`inputTypes[${index}].quantity`]: row.Quantity,
+  //         //[`inputTypes[${index}].files`]: null,
+  //       };
+
+  //       Object.keys(dataObject).forEach((key) => {
+  //         formData.append(key, dataObject[key]);
+  //       });
+  //     });
+
+  //     // Send data using POST request
+  //     const response = await StitchingApi.post(
+  //       "stitching/stitching-track/add",
+  //       formData,
+  //       {
+  //         headers: {
+  //           "Content-Type": "multipart/form-data",
+  //         },
+  //       }
+  //     );
+
+  //     console.log("Data successfully submitted: ", response.data);
+
+  //     // if (response.status === 200) {
+  //     //   alertRef.current.showAlert(
+  //     //     response.data.message,
+  //     //     ENUMTEXT.SUCCESS.SUCCESS_SERV
+  //     //   );
+  //     // }
+
+  //     setTimeout(() => {
+  //       navigation("../stitching/stitching-track");
+  //     }, 3000);
+
+  //     return response;
+  //   } catch (error) {
+  //     console.error("Failed to send data: ", error);
+  //     return error;
+  //   }
+  // };
+  const handleSubmit = async () => {
+    try {
+      const AddInputObject = new FormData();
+
+      // Loop over each row
+      for (let index = 0; index < rowData.length; index++) {
+        const row = rowData[index];
+        console.log("row", row);
+        const dataObject = {
+          [`inputTypes[${index}].orderCreationId`]: row.orderCreationId,
+          [`inputTypes[${index}].orderCreationDetailId`]:
+            row.orderCreationDetailId,
+          [`inputTypes[${index}].orderNumber`]: row.orderNumber,
+
+          ...(selectedInputCategory === "PRODUCTION"
+            ? { [`inputTypes[${index}].productionInputType`]: row.Type }
+            : {}),
+          ...(selectedInputCategory === "CHECKING"
+            ? { [`inputTypes[${index}].checkingInputType`]: row.Type }
+            : {}),
+
+          [`inputTypes[${index}].inputCategory`]: row.inputCategory,
+          [`inputTypes[${index}].startTime`]: row.startDate,
+          [`inputTypes[${index}].endTime`]: row.endDate,
+          [`inputTypes[${index}].size`]: row.Size,
+          [`inputTypes[${index}].quantity`]: row.Quantity,
+          [`inputTypes[${index}].allottedQuantity`]: row.AllotedQuantity,
+          [`inputTypes[${index}].remainingQuantity`]: row.RemainingQty,
+          [`inputTypes[${index}].remarks`]: row.Remarks,
+          ...(formData.selectedInputType === "INITIAL_INPUT" ||
+          formData.selectedInputType === "MID_LINE_INPUT" ||
+          formData.selectedInputType === "END_LINE_OUTPUT" ||
+          formData.selectedInputType === "END_LINE_CHECK"
+            ? { [`inputTypes[${index}].lineId`]: row.lineId }
+            : {}),
+          ...(formData.selectedInputType === "INITIAL_INPUT" ||
+          formData.selectedInputType === "MID_LINE_INPUT" ||
+          formData.selectedInputType === "END_LINE_OUTPUT" ||
+          formData.selectedInputType === "END_LINE_CHECK"
+            ? { [`inputTypes[${index}].lineName`]: row.Line }
+            : {}),
+          ...(selectedInputCategory === "CHECKING"
+            ? { [`inputTypes[${index}].alterQuantity`]: row.AlterQty }
+            : {}),
+
+          ...(selectedInputCategory === "CHECKING"
+            ? { [`inputTypes[${index}].topAlter`]: row.TopAlter }
+            : {}),
+          ...(selectedInputCategory === "CHECKING"
+            ? { [`inputTypes[${index}].checkerName`]: row.CheckerName }
+            : {}),
+            ...(selectedInputCategory === "CHECKING"
+              ? { [`inputTypes[${index}].totalCheck`]: row.TotalChecked }
+              : {}),
+              ...(selectedInputCategory === "CHECKING"
+                ? { [`inputTypes[${index}].totalCheckForOrder`]: row.TotalCheckedForOrder }
+                : {}),
+            
+        };
+
+        Object.keys(dataObject).forEach((key) => {
+          AddInputObject.append(key, dataObject[key]);
+        });
+
+        if (row.files && Array.isArray(row.files) && row.files.length > 0) {
+          row.files.forEach((file, i) => {
+            AddInputObject.append(`inputTypes[${index}].images[${i}]`, file);
+          });
+        }
+      }
+
+      // Submit the form data once all files have been added
+      const response = await StitchingApi.post(
+        "stitching/stitching-track/add",
+        AddInputObject,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        alertRef.current.showAlert(
+          response.data.message,
+          ENUMTEXT.SUCCESS.SUCCESS_SERV
+        );
+      }
+
+      setTimeout(() => {
+        navigation("../stitching/stitching-track");
+      }, 3000);
+
+      return response;
+    } catch (error) {
+      console.error("Failed to send data: ", error);
+      return error;
+    }
+  };
+
+  return (
+    <Box>
+      <CustomAlert ref={alertRef} />
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-start",
+          gap: "25px",
+          padding: "10px 25px",
+          flexWrap: "wrap", // Allow items to wrap on smaller screens
+        }}
+      >
+        <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+          <AutoComplete
+            value={inputValue}
+            onChange={handleOrderChng}
+            options={orderNumberData}
+            label="Select Order Number"
+            loading={loading}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: loading ? <CircularProgress size={24} /> : null,
+                }}
+              />
+            )}
+          />
+        </Box>
+
+        <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+          <AutoComplete
+            value={selectedItemValue}
+            onChange={handleItemChng}
+            options={styleDetailsData?.map(([key, value]) => value) || []}
+            label="Select Style Details"
+            loading={loading}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: loading ? <CircularProgress size={24} /> : null,
+                }}
+              />
+            )}
+          />
+        </Box>
+
+        <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+          <StaticTrackDropdown
+            label="Input Category"
+            orderNumberData={addInputCategory}
+            selectedValue={selectedInputCategory}
+            setSelectedValue={setSelectedInputCategory}
+          />
+        </Box>
+
+        <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+          <StaticTrackDropdown
+            label="Input Type"
+            orderNumberData={addInputType.length > 0 ? addInputType : []}
+            loading={addInputType.length === 0}
+            selectedValue={formData.selectedInputType}
+            setSelectedValue={(value) =>
+              setFormData((prevState) => ({
+                ...prevState,
+                selectedInputType: value,
+              }))
+            }
+          />
+        </Box>
+
+        {selectedInputCategory === "CHECKING" && (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-start",
+              gap: "25px",
+              padding: "15px 0px",
+            }}
+          >
+            <Typography>Total Order Alter Percentage:</Typography>
+          </Box>
+        )}
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-start",
+          gap: "25px",
+          padding: "10px 25px",
+          flexWrap: "wrap", // Allow items to wrap on smaller screens
+        }}
+      >
+        <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+          <LocalizationProvider
+            dateAdapter={AdapterDayjs}
+            adapterLocale="en-gb"
+          >
+            <DatePicker
+              label={"Date"}
+              openTo="day"
+              views={["day", "month", "year"]}
+              sx={{ width: "100%" }}
+              value={
+                formData.startDateTime ? dayjs(formData.startDateTime) : null
+              }
+              onChange={(newValue) =>
+                setFormData((prevState) => ({
+                  ...prevState,
+                  startDateTime: newValue
+                    ? newValue.format("YYYY-MM-DD")
+                    : null,
+                }))
+              }
+              renderInput={(params) => <TextField {...params} />}
+              minDate={
+                formData.selectedInputType === "CUTTING_RECEIVED"
+                  ? orderDates.cuttingGoAheadDate
+                    ? dayjs(orderDates.cuttingGoAheadDate)
+                    : null
+                  : orderDates.scheduledStartDate
+                  ? dayjs(orderDates.scheduledStartDate)
+                  : dayjs(orderDates.stitchingStartDate)
+              }
+              maxDate={
+                formData.selectedInputType === "CUTTING_RECEIVED"
+                  ? orderDates.scheduledStartDate
+                    ? dayjs(orderDates.scheduledStartDate)
+                    : orderDates.deliveryDate
+                    ? dayjs(orderDates.deliveryDate)
+                    : null
+                  : orderDates.deliveryDate
+                  ? dayjs(orderDates.deliveryDate)
+                  : null
+              }
+            />
+          </LocalizationProvider>
+        </Box>
+
+        <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+          <StaticTrackDropdown
+            label="Line"
+            orderNumberData={selectOrderLine.map((line) => line.lineName)}
+            value={formData.orderSelectedLine}
+            selectedValue={formData.orderSelectedLine}
+            setSelectedValue={(newValue) =>
+              handleInputChange("orderSelectedLine", newValue)
+            }
+            disabled={
+              formData.selectedInputType === "CUTTING_RECEIVED" ||
+              formData.selectedInputType === "ISSUE_TO_FINISHING"
+            }
+          />
+        </Box>
+
+        <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+          <StaticTrackDropdown
+            label="Size"
+            orderNumberData={orderSizeData}
+            value={formData.selectedSize}
+            selectedValue={formData.selectedSize}
+            setSelectedValue={(newValue) =>
+              setFormData((prevState) => ({
+                ...prevState,
+                selectedSize: newValue,
+              }))
+            }
+          />
+        </Box>
+
+        <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <TimePicker
+              label="Start Time"
+              value={
+                formData.startTime
+                  ? dayjs(`1970-01-01T${formData.startTime}`)
+                  : null
+              }
+              onChange={(newValue) =>
+                setFormData((prevState) => ({
+                  ...prevState,
+                  startTime: newValue ? newValue.format("hh:mm A") : null,
+                }))
+              }
+              sx={{ width: "100%" }}
+              views={["hours"]}
+              renderInput={(params) => <TextField {...params} />}
+              ampm
+            />
+          </LocalizationProvider>
+        </Box>
+
+        <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <TimePicker
+              label="End Time"
+              value={formData.endTime ? dayjs(formData.endTime) : null}
+              onChange={(newValue) => {
+                setFormData((prevState) => ({
+                  ...prevState,
+                  endTime: newValue
+                    ? newValue.format("YYYY-MM-DD") +
+                      "T" +
+                      newValue.format("HH:mm:ss")
+                    : null,
+                }));
+              }}
+              sx={{ width: "100%" }}
+              views={["hours"]}
+              renderInput={(params) => <TextField {...params} />}
+              ampm
+            />
+          </LocalizationProvider>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "25px",
+          padding: "10px 25px",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "flex-start",
+            gap: "25px",
+          }}
+        >
+          <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+            <TextField
+              label="Quantity"
+              value={formData.quantity}
+              onChange={(e) =>
+                setFormData((prevState) => ({
+                  ...prevState,
+                  quantity: e.target.value,
+                }))
+              }
+              fullWidth
+            />
+          </Box>
+
+          {selectedInputCategory === "CHECKING" ? (
+            <>
+              <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+                <StaticTrackDropdown
+                  label="Checker Name"
+                  orderNumberData={checkerNameArray}
+                  selectedValue={selectedCheckerName}
+                  setSelectedValue={setSelectedCheckerName}
+                />
+              </Box>
+              <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+                <ReadOnlyInput
+                  label="Alter Quantity"
+                  value={alterQuanty}
+                  onChange={handleAlterQuantityChange}
+                />
+              </Box>
+              <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+                <ReadOnlyInput
+                  label="Top Alter"
+                  value={topAlt}
+                  onChange={handleTopAlterChange}
+                />
+              </Box>
+            </>
+          ) : (
+            <>
+              <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+                <TextField
+                  label="Remarks"
+                  value={formData.remarks}
+                  onChange={(e) =>
+                    setFormData((prevState) => ({
+                      ...prevState,
+                      remarks: e.target.value,
+                    }))
+                  }
+                  fullWidth
+                />
+              </Box>
+              <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+                <FileUploadField
+                  onChange={handleFileChange}
+                  handleDelete={handleDeleteFile}
+                  value={files}
+                  label={`Attach Image${
+                    files.length > 0 ? ` (${files.length})` : ""
+                  }`}
+                  disabled={
+                    inputValue === "" ||
+                    inputValue === null ||
+                    inputValue === undefined
+                  }
+                />
+              </Box>
+              <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+                <CustomButton
+                  onClick={handleAddInput}
+                  sx={{
+                    width: "100%",
+                    height: "52px!important",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Add Input
+                </CustomButton>
+              </Box>
+            </>
+          )}
+
+          {selectedInputCategory === "CHECKING" && (
+            <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+              <TextField
+                label="Remarks"
+                value={formData.remarks}
+                onChange={(e) =>
+                  setFormData((prevState) => ({
+                    ...prevState,
+                    remarks: e.target.value,
+                  }))
+                }
+                fullWidth
+              />
+            </Box>
+          )}
+        </Box>
+
+        {selectedInputCategory === "CHECKING" && (
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "25px",
+            }}
+          >
+            <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+              <FileUploadField
+                onChange={handleFileChange}
+                handleDelete={handleDeleteFile}
+                value={files}
+                label={`Attach Image${
+                  files.length > 0 ? ` (${files.length})` : ""
+                }`}
+              />
+            </Box>
+            <Box sx={{ width: { xs: "100%", sm: "300px" } }}>
+              <CustomButton
+                onClick={handleAddInput}
+                sx={{
+                  width: "100%",
+                  height: "52px!important",
+                  fontWeight: "bold",
+                }}
+              >
+                Add Input
+              </CustomButton>
+            </Box>
+          </Box>
+        )}
+      </Box>
+
+      <Box>
+        <AgGridTable
+          colData={addInputColDefs}
+          rowData={rowData}
+          pagination={true}
+          paginationPageSize={10}
+          paginationPageSizeSelector={[5, 10, 25, 50]}
+        />
+      </Box>
+
+      <Box
+        sx={{
+          width: { xs: "100%", sm: "300px" },
+          marginLeft: "1rem",
+          marginTop: "1rem",
+        }}
+      >
+        <CustomButton onClick={handleSubmit}>Submit</CustomButton>
+      </Box>
+
+      <DeleteConfirmationPopUp
+        open={deleteConfirmPopUp}
+        handleCancel={deletePopUpCancel}
+        handleconfirm={handleconfirm}
+      />
+    </Box>
+  );
+}
